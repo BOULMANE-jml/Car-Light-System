@@ -1,0 +1,570 @@
+/* carlightSystem
+ * Author: ESSEBANI Anas , Elmessaoudi Mohammed  , Hamdaoui Alaoui Ahmed Amine
+ * Creation date: 5/11/2020
+ */
+SYSTEM 
+       carlightSystem
+SETS 
+    Positions={On,Off,Auto,OnTemp}; 
+    armPositions={backward,forward,Downward5,Upward5,Downward7,Upward7,Neutral};
+    wheel_angel={less_10,more_10};//indique l'angle dans laquelle le volant tourne   
+    TimeVar ={Day, Night};
+    KeyPositions={NoKeyInserted, KeyInserted, KeyInIgnitionOnPosition};
+    Engine_status={True, False};
+    control_lever_Staus={Backward,Forward,up,down,turning_the_head,button_at_the_head,neutral};
+    camera_State={Ready, Dirty, NotReady}
+VARIABLES 
+lightRotarySwitch,
+pitmanArm,
+Time,
+high_beam,
+low_beam,
+SignalLeft,
+SignalRight,
+Wheel,
+keyState,
+engineOn,
+brightnessSensor,
+Angel_brake_pedal,
+brake_Light,
+voltageBattery,
+allDoorsClosed,  
+currentSpeed,
+reverseGear,
+reverseLight,
+Hazard_Warning_Light_Switch,
+corneringLightLeft,
+corneringLightRight,
+Cruise_control_lever,
+gasPedal,
+cameraState,
+oncomingTraffic
+INVARIANT 
+ pitmanArm :armPositions & // pour gerer les different position de pitmanArm  
+ Time:TimeVar &//pour indiquer le temps actuel (nuit,matin)
+ high_beam:Positions & //indique l'etat de high beam
+ low_beam:0 .. 100 & //indique l'etat de low beam
+ SignalLeft:Positions &//indique l'etat de SignalLeft
+ SignalRight:Positions &//indique l'etat de SignalRight
+ lightRotarySwitch  : Positions&//indique l'etat de lightRotarySwitch
+ Wheel:wheel_angel & //detecte l'ongle de rotation du volant 
+ keyState:KeyPositions&//indique l'etat de cle
+ engineOn:Engine_status &//indique l'etat de motor de voiture
+ brightnessSensor:0..10000 &//modifie la qualité de la lummiere
+ Angel_brake_pedal :0..45 &//indique l'angle de pédale de frein 
+ brake_Light:0..255 &//modifie la qualité de l'éclairage de frein 
+ voltageBattery:0..50 &//modifie le volume de la Battery
+ allDoorsClosed:BOOL &//indique l'état des portes
+ currentSpeed:0..200 &//indiquer la vitesse courant de la voiture
+ reverseGear:BOOL &//indique si la voiture marche arrière ou pas
+ reverseLight:BOOL &//indique l'état de reverseLight
+ //l'éclairage de verage  
+ corneringLightLeft:0 .. 100 &
+ corneringLightRight:0 .. 100 &
+ 
+ Hazard_Warning_Light_Switch:BOOL & //indique l'etat de feux de détrèsse
+ 
+ gasPedal:0..45 & //indique l'angle de pédale de vitésse
+ 
+ Cruise_control_lever:control_lever_Staus & // pour gerer les different position Cruise_control_lever
+ 
+ cameraState:camera_State &//indique l'etat de caméra
+ 
+ oncomingTraffic:BOOL & //detecter l'existance des voiture proche dans la route 
+ 
+ //le high beam devient activer si et seulement si le pitmanArm en état backward et lightRotarySwitch en état auto
+ (pitmanArm  = backward & (lightRotarySwitch=On) & engineOn=True => high_beam=On)
+&
+//le SignalLeft devient activer si et seulement si le pitmanArm en état Upward7 et lightRotarySwitch en état auto et On
+ ( pitmanArm = Upward7 & (lightRotarySwitch:{On,Auto}) & engineOn=True => SignalLeft=On )
+&
+//le SignalRight devient activer si et seulement si le pitmanArm en état Downward7 et lightRotarySwitch en état auto et On
+ ( pitmanArm = Downward7 & (lightRotarySwitch:{On,Auto})& engineOn=True =>SignalRight=On)
+&
+//le SignalLeft devient en etat temporaire si et seulement si le pitmanArm en état Upward5 et lightRotarySwitch en état auto,On et Hazard_Warning_Light_Switch egale true et engineON egale true
+ ( pitmanArm = Upward5 & (lightRotarySwitch:{On,Auto}) &Hazard_Warning_Light_Switch/=TRUE &engineOn=True =>SignalLeft=OnTemp)
+&
+//le SignalLeft devient en etat temporaire si et seulement si le pitmanArm en état Downward5 et lightRotarySwitch en état auto,On et Hazard_Warning_Light_Switch egale true et engineON egale true
+ ( pitmanArm = Downward5 & (lightRotarySwitch:{On,Auto}) &Hazard_Warning_Light_Switch/=TRUE& engineOn=True =>SignalRight=OnTemp)
+&
+//le low_beam egale 100(on) si et seulement si le pitmanArm en état { forward,backward} et Time on etat Night lightRotarySwitch en état auto et high beam en etat {On,OnTemp}  et engineON egale true et keyState en  etat KeyInIgnitionOnPosition
+ ( lightRotarySwitch = Auto &high_beam/:{On,OnTemp}& pitmanArm /:{ forward,backward}&Time=Night & engineOn=True & keyState=KeyInIgnitionOnPosition  =>low_beam=100)
+&
+//le demmarage de voiture ce fait uniquement si le voltageBattery >10 et le keyState en position KeyInIgnitionOnPosition
+(engineOn=True =>(voltageBattery>=10 &keyState=KeyInIgnitionOnPosition))
+&
+// le corneringLight peut  etre activé si et seulment si le low beam est activé 
+((corneringLightLeft=100 or corneringLightRight=100)=> (low_beam=100 or low_beam=50))
+&
+// ne peut pas accelerer sans demmarer la voiture
+(currentSpeed>0 =>keyState=KeyInIgnitionOnPosition &  engineOn=True  ) 
+
+
+
+INITIALISATION 
+  Time:=Day 
+||pitmanArm := Neutral
+||lightRotarySwitch:=Off
+||high_beam:=Off
+||low_beam:=0
+||SignalLeft:=Off
+||SignalRight:=Off
+||Wheel:=less_10
+||keyState:=NoKeyInserted
+||engineOn:=False
+||brightnessSensor:=0
+||Angel_brake_pedal:=0
+||brake_Light:=0
+||voltageBattery:=50
+||allDoorsClosed:=TRUE
+||currentSpeed:=0
+||reverseGear:=FALSE
+||reverseLight:=FALSE
+||Hazard_Warning_Light_Switch:=FALSE
+||corneringLightLeft:=0
+||corneringLightRight:=0
+||gasPedal:=0
+||Cruise_control_lever:=neutral
+||cameraState:=NotReady
+||oncomingTraffic:=FALSE
+EVENTS
+    
+// changer l'etat de lightRotarySwitch à l'etat on
+allumerOn =
+ANY light_state WHERE 
+light_state =Auto& high_beam/=On &
+lightRotarySwitch /= On & lightRotarySwitch /= Off 
+THEN 
+lightRotarySwitch := On ||
+BEGIN
+IF (pitmanArm=backward)
+THEN 
+high_beam:=On 
+END;
+IF (keyState=KeyInserted)
+THEN 
+low_beam:=50 
+END;
+IF (keyState=KeyInIgnitionOnPosition)
+THEN 
+low_beam:=100 
+END
+END
+END;
+
+// changer l'etat de lightRotarySwitch à l'etat auto
+allumer_auto =
+ANY light_state WHERE 
+light_state ={Off,On}&
+lightRotarySwitch /= Auto & engineOn=True
+THEN 
+lightRotarySwitch:= Auto ||
+BEGIN
+IF ( Time=Day)
+THEN 
+low_beam:=0 ||
+corneringLightLeft:=0 ||
+corneringLightRight:=0
+ELSE
+IF (keyState=KeyInserted)
+THEN 
+low_beam:=50 
+END;
+IF (keyState=KeyInIgnitionOnPosition)
+THEN 
+low_beam:=100 
+END ||
+BEGIN
+IF (pitmanArm=backward)
+THEN 
+IF (oncomingTraffic=FALSE)
+THEN
+high_beam:=On 
+ELSE
+high_beam:=Off
+END
+END
+END
+END
+END
+END;
+
+// changer l'etat de lightRotarySwitch à l'etat off
+etiendre =
+ANY light_state WHERE 
+light_state ={Auto,On} &
+lightRotarySwitch /= On & lightRotarySwitch /= Off & engineOn=True
+THEN 
+lightRotarySwitch := Off||
+low_beam:=0 ||
+high_beam:=Off ||
+pitmanArm := Neutral ||
+SignalLeft:=Off||
+SignalRight:=Off ||
+corneringLightLeft:=0 ||
+corneringLightRight:=0
+END;
+
+// allumer le high beam de la voiture
+high__beam =
+ANY arm WHERE 
+arm =backward & pitmanArm /=backward &
+lightRotarySwitch : {On,Auto} & pitmanArm /: {forward,Downward5,Upward5,Downward7,Upward7} & engineOn=True
+THEN 
+BEGIN
+IF (oncomingTraffic=FALSE)
+THEN 
+pitmanArm := backward || 
+high_beam:=On ||
+low_beam:=0 ||
+corneringLightLeft:=0 ||
+corneringLightRight:=0
+ELSE
+    IF (lightRotarySwitch=Auto)
+THEN 
+pitmanArm := backward || 
+high_beam:=Off ||
+low_beam:=255 ||
+corneringLightLeft:=0 ||
+corneringLightRight:=0
+END
+END
+END
+END;
+
+// allumer le high beam temporairement 
+Flasher =
+ANY arm WHERE 
+arm =forward &pitmanArm /=forward &
+lightRotarySwitch :{On,Auto} & pitmanArm /: {backward,Downward5,Upward5,Downward7,Upward7} & engineOn=True
+THEN
+pitmanArm := forward ||
+high_beam:=OnTemp ||
+low_beam:=0 ||
+corneringLightLeft:=0 ||
+corneringLightRight:=0
+END;
+
+// allumer le signial gauche 
+SignalLef =
+ANY light_state WHERE 
+light_state :{Upward5,Upward7}&
+pitmanArm /: {Upward7,forward,backward,Downward5,Downward7} &  engineOn=True
+THEN 
+pitmanArm:=Upward7 ||
+SignalLeft:=On ||
+BEGIN
+IF (low_beam=100 or low_beam=50)
+THEN 
+corneringLightLeft:=100
+END
+END
+END;
+
+// allumer le signial gauche temporairement
+SignalLefTemp =
+ANY light_state WHERE 
+light_state :{Upward5,Upward7}&
+pitmanArm /: {Upward5,forward,backward,Downward5,Downward7} &  engineOn=True
+THEN 
+pitmanArm:=Upward5 ||
+SignalLeft:=OnTemp
+END;
+
+// allumer le signial droit
+SignalRigh =
+ANY light_state WHERE 
+light_state :{Upward5,Upward7}&
+pitmanArm /: {Downward7,forward,backward,Upward5,Upward7} & engineOn=True
+THEN
+pitmanArm:=Downward7 ||
+SignalRight:=On ||
+BEGIN
+IF (low_beam=100 or low_beam=50)
+THEN 
+corneringLightRight:=100
+END
+END
+END;
+
+// allumer le signial droit temporairement
+SignalRightemp =
+ANY light_state WHERE 
+light_state :{Upward5,Upward7}&
+pitmanArm /: {Downward5,forward,backward,Upward5,Upward7} &  engineOn=True
+THEN
+pitmanArm:=Downward5 ||
+SignalRight:=OnTemp
+END;
+
+// positioner le  pitmanArm au positon neutre
+neutraliseArm =
+ANY arm WHERE 
+arm =Neutral & pitmanArm /=Neutral &
+lightRotarySwitch :{On,Auto} & pitmanArm : {forward,backward,Downward5,Upward5,Downward7,Upward7} & engineOn=True
+THEN 
+pitmanArm :=Neutral ||
+SignalLeft:=Off||
+SignalRight:=Off ||
+high_beam:=Off ||
+BEGIN
+IF (((Time=Night & lightRotarySwitch =Auto) or lightRotarySwitch =On) &keyState=KeyInserted )
+THEN 
+low_beam:=50
+END;
+IF (((Time=Night & lightRotarySwitch =Auto) or lightRotarySwitch =On) &keyState=KeyInIgnitionOnPosition )
+THEN 
+low_beam:=100
+END;
+IF ((Time=Day & lightRotarySwitch =Auto) or lightRotarySwitch =Off )
+THEN 
+low_beam:=0 ||
+corneringLightLeft:=0 ||
+corneringLightRight:=0
+END
+END
+END;
+
+// basculer sur le nuit vers le matin ou l'inverse 
+changeTime =
+BEGIN
+IF ( Time=Day )
+THEN 
+Time:=Night||
+BEGIN
+IF (lightRotarySwitch=Auto)
+THEN 
+low_beam:=100
+END
+END
+ELSE 
+Time:=Day||
+BEGIN
+IF (lightRotarySwitch=Auto)
+THEN 
+low_beam:=0 ||
+corneringLightLeft:=0 ||
+corneringLightRight:=0
+END
+END
+END
+END;
+
+
+// changer l'angle de volant 
+changeAngel =
+SELECT 
+engineOn=True
+THEN
+BEGIN
+IF ( Wheel=less_10)
+THEN 
+Wheel:=more_10||
+BEGIN
+IF ( (SignalLeft=On or SignalRight=On))
+THEN 
+SignalLeft:=Off||
+SignalRight:=Off ||
+pitmanArm := Neutral 
+END
+END
+ELSE 
+Wheel:=less_10
+END
+END
+END;
+
+// inserer la cle 
+insertKey =
+SELECT 
+keyState/=KeyInserted  &  engineOn/=True 
+THEN
+keyState:=KeyInserted  
+END;
+
+// extracter la cle
+key_extracted=
+SELECT 
+keyState/=NoKeyInserted & keyState=KeyInserted & engineOn/=True 
+THEN
+keyState:=NoKeyInserted  
+END;
+
+// tourner la cle pour demmarer la voiture
+Car_Power_On=
+SELECT 
+keyState=KeyInserted & engineOn/=True & voltageBattery>10 
+THEN
+engineOn:=True ||
+keyState:=KeyInIgnitionOnPosition ||
+voltageBattery:=voltageBattery-1 ||
+cameraState:=Ready
+END;
+
+// augmenter la  limunosité
+Brightness_Plus=
+SELECT 
+engineOn=True & high_beam=On & brightnessSensor<10000
+THEN
+brightnessSensor:=brightnessSensor+2500 
+END;
+
+// deminuer la  limunosité
+Brightness_substraction=
+SELECT 
+engineOn=True & high_beam=On & brightnessSensor>0
+THEN
+brightnessSensor:=brightnessSensor-2500 
+END;
+
+// freiner la voiture
+Brake=
+SELECT 
+engineOn=True & Angel_brake_pedal<45 & brake_Light<=225
+THEN
+Angel_brake_pedal:=Angel_brake_pedal+5 ||
+brake_Light:=brake_Light+25 ||
+BEGIN
+IF ( currentSpeed>0)
+THEN 
+currentSpeed:=currentSpeed-20 ||
+gasPedal:=0
+END
+END
+END;
+
+// augmenter la vitesse de la voiture
+accelerate=
+SELECT 
+engineOn=True & gasPedal<45 & Angel_brake_pedal=0 & currentSpeed<180
+THEN
+gasPedal:=gasPedal+5 ||
+currentSpeed:=currentSpeed+20 ||
+Angel_brake_pedal:=0 ||
+brake_Light:=0
+END;
+
+// laisser le freine 
+less_Break_Pedal=
+SELECT 
+engineOn=True & Angel_brake_pedal>0 & brake_Light>0
+THEN
+Angel_brake_pedal:=Angel_brake_pedal-5 ||
+brake_Light:=brake_Light-25
+END;
+
+// laisser l'accelerateur 
+less_gas_Pedal=
+SELECT 
+engineOn=True & gasPedal>0
+THEN
+gasPedal:=gasPedal-5 ||
+currentSpeed:=currentSpeed-20
+END;
+
+// activer le mode marche en arriere
+Rear_Move=
+SELECT 
+engineOn=True & currentSpeed=0 & reverseLight=FALSE
+THEN
+reverseLight:=TRUE ||
+reverseGear:= TRUE
+END;
+
+// desactiver le mode marche en arriere
+Forward_Move=
+SELECT 
+engineOn=True & currentSpeed=0 & reverseLight=TRUE
+THEN
+reverseLight:=FALSE ||
+reverseGear:= FALSE
+END;
+
+// activer la lumiere d'en panne
+On_Warning_Light=
+SELECT 
+(keyState=KeyInIgnitionOnPosition or keyState=KeyInserted) &Hazard_Warning_Light_Switch/=TRUE
+THEN
+Hazard_Warning_Light_Switch:=TRUE ||
+brake_Light:=225||
+SignalRight:=On ||
+SignalLeft:=On
+END;
+
+// desactiver la lumiere d'en panne
+Off_Warning_Light=
+SELECT 
+(keyState=KeyInIgnitionOnPosition or keyState=KeyInserted)  &Hazard_Warning_Light_Switch/=FALSE
+THEN
+Hazard_Warning_Light_Switch:=FALSE ||
+brake_Light :=0 ||
+IF ( pitmanArm = Upward7)
+THEN 
+SignalRight:=Off ||
+SignalLeft:=On
+ELSE
+IF( pitmanArm = Downward7)
+THEN 
+SignalRight:=On ||
+SignalLeft:=Off
+ELSE
+IF( pitmanArm = Downward5)
+THEN 
+SignalRight:=OnTemp ||
+SignalLeft:=Off 
+ELSE
+IF( pitmanArm = Upward5)
+THEN 
+SignalRight:=Off ||
+SignalLeft:=OnTemp 
+ELSE 
+SignalRight:=Off ||
+SignalLeft:=Off
+
+END
+END
+END
+END
+END;
+
+// activer le control lever
+Active_control_lever=
+SELECT 
+Cruise_control_lever/=Forward & engineOn=True
+THEN
+Cruise_control_lever:=Forward
+END;
+
+// desactiver le control lever
+Desactive_control_lever=
+SELECT 
+Cruise_control_lever/=Backward & engineOn=True
+THEN
+Cruise_control_lever:=Backward
+END;
+
+// eteindre la voiture 
+Power_Off_Car=
+SELECT 
+currentSpeed=0 & keyState=KeyInIgnitionOnPosition & engineOn=True
+THEN
+engineOn:=False ||
+keyState:=KeyInserted ||
+lightRotarySwitch := Off||
+low_beam:=0 ||
+high_beam:=Off ||
+pitmanArm := Neutral ||
+SignalLeft:=Off||
+SignalRight:=Off ||
+corneringLightLeft:=0 ||
+corneringLightRight:=0
+END;
+
+// desactiver la caméra
+Disable_Camera=
+SELECT 
+engineOn=True & cameraState=Ready
+THEN
+cameraState:=NotReady
+END
+END

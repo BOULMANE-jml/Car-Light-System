@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<db_xml>
+    <atelierb version="3_7_ubuntu-cvs" />
+    <project decomp_dir="C:\Users\admin\Desktop\s2\tp\lightsystem\bdp\expand_src" old_decomp_dir="C:\Users\admin\Desktop\s2\tp\lightsystem\bdp\src" type="SYSTEM">
+        <!-- Definition directory list -->
+        <definition_dir path="C:\Users\admin\Desktop\s2\tp\lightsystem" />
+        <!-- Component file list -->
+        <component_file path="C:\Users\admin\Desktop\s2\tp\lightsystem" name="carlightSystem" suffix="sys" user="admin">
+            <component name="carlightSystem" type="system" />
+        </component_file>
+    </project>
+</db_xml>
